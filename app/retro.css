@@ -1,0 +1,234 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #d32f2f;
+
+  /* CRT effect tuning (enabled via html.crt-on) */
+  --crt-scanline-opacity: 0.12;
+  --crt-scanline-size: 2px;
+  --crt-mask-opacity: 0.06;
+  --crt-mask-size: 3px;
+  --crt-vignette-opacity: 0.38;
+  --crt-flicker-opacity: 0.045;
+  --crt-flicker-cycle: 7s;
+  --crt-noise-opacity: 0.025;
+
+  /* CRT bend */
+  --crt-bend-radius: 94px;
+  --crt-bend-tilt: 0.6deg;
+  --crt-bulge: 22px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* 1. LOCK VIEWPORT: Prevents the transform from causing screen-wide overflow */
+html,
+body {
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  position: relative;
+}
+
+/* Remove ALL scrollbars (keep scrolling functional inside containers) */
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+/* 2. CONSTRAIN CONTENT: Ensure the "glass" doesn't exceed screen dimensions */
+.crt-content {
+  height: 100vh;
+  width: 100vw;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto; /* Content can still scroll inside the CRT effect */
+  box-sizing: border-box;
+  position: relative;
+}
+
+html.crt-on .crt-content {
+  /* Scale is set to 1.0 to prevent edges from pushing past the screen bounds during 3D rotation */
+  transform: perspective(1400px) translateZ(var(--crt-bulge))
+    rotateX(var(--crt-bend-tilt)) rotateY(calc(var(--crt-bend-tilt) * -1))
+    scale(1);
+  transform-origin: 50% 50%;
+  border-radius: var(--crt-bend-radius);
+  overflow: clip;
+  will-change: transform;
+}
+
+html.crt-on .crt-content::before {
+  content: "";
+  position: fixed;
+  inset: 10px;
+  border-radius: calc(var(--crt-bend-radius) + 8px);
+  pointer-events: none;
+  z-index: 9998;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(255, 255, 255, 0.07) 0%,
+      rgba(255, 255, 255, 0) 45%
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 40%,
+      rgba(0, 0, 0, 0.35) 100%
+    );
+  mix-blend-mode: soft-light;
+}
+
+/* 3. OVERLAY: Fixed to viewport but clipped to screen */
+.crt-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  overflow: hidden;
+}
+
+html.crt-on .crt-overlay {
+  opacity: 1;
+}
+
+/* Layer 1: scanlines + RGB mask */
+.crt-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) calc(var(--crt-scanline-size) * 0.5),
+      rgba(0, 0, 0, var(--crt-scanline-opacity))
+        calc(var(--crt-scanline-size) * 0.5),
+      rgba(0, 0, 0, var(--crt-scanline-opacity)) var(--crt-scanline-size)
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 0, 0, var(--crt-mask-opacity)) 0,
+      rgba(255, 0, 0, var(--crt-mask-opacity)) 1px,
+      rgba(0, 255, 0, var(--crt-mask-opacity)) 1px,
+      rgba(0, 255, 0, var(--crt-mask-opacity)) 2px,
+      rgba(0, 0, 255, var(--crt-mask-opacity)) 2px,
+      rgba(0, 0, 255, var(--crt-mask-opacity)) var(--crt-mask-size)
+    );
+  mix-blend-mode: overlay;
+  opacity: 0.95;
+}
+
+/* Layer 2: vignette + occasional flicker + subtle noise */
+.crt-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, calc(var(--crt-vignette-opacity) * 0.5)) 55%,
+      rgba(0, 0, 0, var(--crt-vignette-opacity)) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, var(--crt-noise-opacity)) 1px,
+      rgba(255, 255, 255, 0) 2px
+    );
+  mix-blend-mode: multiply;
+  opacity: 1;
+  animation: crt-flicker var(--crt-flicker-cycle) infinite;
+}
+
+@keyframes crt-flicker {
+  0%,
+  88%,
+  100% {
+    opacity: 1;
+    filter: none;
+  }
+  90% {
+    opacity: calc(1 - var(--crt-flicker-opacity));
+    filter: brightness(1.02) contrast(1.03);
+  }
+  91% {
+    opacity: 1;
+    filter: none;
+  }
+  96% {
+    opacity: calc(1 - (var(--crt-flicker-opacity) * 0.7));
+    filter: brightness(1.01) contrast(1.02);
+  }
+  97% {
+    opacity: 1;
+    filter: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crt-overlay::after {
+    animation: none;
+  }
+  html.crt-on .crt-content {
+    transform: none;
+  }
+}
+
+html.crt-on body {
+  filter: saturate(1.05) contrast(1.02);
+}
+
+/* Phosphor-style text glow */
+html.crt-on :where(p, span, a, li, h1, h2, h3, h4, h5, h6, label, button) {
+  text-shadow:
+    0 0 18px rgba(255, 255, 255, 0.14),
+    0 0 8px rgba(255, 255, 255, 0.18),
+    0 0 2px rgba(255, 255, 255, 0.32),
+    -0.4px 0 rgba(0, 255, 120, 0.12),
+    0.4px 0 rgba(255, 60, 60, 0.12);
+}
+
+@supports (color: color-mix(in srgb, white, black)) {
+  html.crt-on :where(p, span, a, li, h1, h2, h3, h4, h5, h6, label, button) {
+    text-shadow:
+      0 0 22px color-mix(in srgb, currentColor 32%, transparent),
+      0 0 12px color-mix(in srgb, currentColor 40%, transparent),
+      0 0 3px color-mix(in srgb, currentColor 58%, transparent),
+      -0.4px 0 color-mix(in srgb, currentColor 26%, rgba(0, 255, 120, 0.18)),
+      0.4px 0 color-mix(in srgb, currentColor 26%, rgba(255, 60, 60, 0.18));
+  }
+}

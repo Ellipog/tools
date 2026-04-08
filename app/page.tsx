@@ -1,65 +1,238 @@
-import Image from "next/image";
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
+import ScrambleText from "@/app/components/ScrambleText";
+import Header from "@/components/ui/header";
+import { jpcharlist } from "@/public/data/charlists";
+
+type ToolLink = {
+  label: string;
+  href: string;
+  description?: string;
+  icon: "globe" | "code" | "pen" | "photo" | "music" | "mail" | "bolt";
+};
+
+function LinkIcon({ kind }: { kind: ToolLink["icon"] }) {
+  const common = "h-3.5 w-3.5 shrink-0 opacity-70";
+  switch (kind) {
+    case "photo":
+      return (
+        <svg
+          className={common}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M8.5 10.5h.01"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+          <path
+            d="m21 16-5.5-5.5L6 20"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "bolt":
+      return (
+        <svg
+          className={common}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M13 2 4 14h7l-1 8 10-14h-7l0-6Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "pen":
+      return (
+        <svg
+          className={common}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 20h9"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4 11.5-11.5Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    case "code":
+      return (
+        <svg
+          className={common}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M9 18 3 12l6-6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M15 6l6 6-6 6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+    default:
+      return (
+        <svg
+          className={common}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+          />
+          <path
+            d="M3 12h18"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+          <path
+            d="M12 3c2.8 2.6 4.5 5.9 4.5 9S14.8 18.4 12 21c-2.8-2.6-4.5-5.9-4.5-9S9.2 5.6 12 3Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
+  }
+}
 
 export default function Home() {
+  const [query, setQuery] = useState("");
+
+  const jpchars = useMemo(() => jpcharlist, []);
+
+  const groups = useMemo(() => {
+    return [
+      {
+        title: "creative",
+        items: [
+          {
+            label: "pixel-art",
+            href: "/pixelart",
+            description: "ドット絵",
+            icon: "photo",
+          },
+        ] satisfies ToolLink[],
+      },
+    ] as const;
+  }, []);
+
+  const filteredGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return groups;
+    return groups
+      .map((g) => ({
+        ...g,
+        items: g.items.filter((it) => {
+          const hay =
+            `${it.label} ${it.description ?? ""} ${it.href}`.toLowerCase();
+          return hay.includes(q);
+        }),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [groups, query]);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen">
+      <Header title="home" />
+      <div className="h-screen bg-black text-white flex flex-col">
+        <div className="w-full px-6 py-12">
+          <div className="flex w-full justify-end gap-6  pb-4">
+            <label className="flex items-center gap-2 text-sm text-white/60 pr-8">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                inputMode="search"
+                placeholder="search…"
+                className="border-b border-white/10 w-44 sm:w-56 bg-transparent text-white/80 placeholder:text-white/30 outline-none text-right"
+              />
+            </label>
+          </div>
+
+          <div className="mt-8 pl-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10">
+            {filteredGroups.map((group) => (
+              <section key={group.title} aria-label={group.title}>
+                <div className="text-xs text-white/45 tracking-[0.22em] uppercase">
+                  {group.title}
+                </div>
+                <ul className="mt-3 space-y-2.5">
+                  {group.items.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className="group inline-flex items-baseline gap-2 text-white/80 hover:text-white transition-colors cursor-pointer"
+                      >
+                        <span className="translate-y-px">
+                          <LinkIcon kind={item.icon} />
+                        </span>
+                        <span className="text-base leading-none">
+                          {item.label}
+                        </span>
+                        {item.description ? (
+                          <ScrambleText
+                            text={item.description}
+                            chars={jpchars}
+                            timeOffset={100}
+                            autoPlay={true}
+                            className="text-sm text-white/35 group-hover:text-white/45 transition-colors"
+                          />
+                        ) : null}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
+          </div>
+
+          {filteredGroups.length === 0 && (
+            <div className="mt-10 text-sm text-white/45 text-center">
+              no matches found
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
