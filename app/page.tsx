@@ -145,13 +145,31 @@ export default function Home() {
   const groups = useMemo(() => {
     return [
       {
-        title: "creative",
+        title: "images",
         items: [
           {
             label: "pixel-art",
             href: "/pixelart",
             description: "ドット絵",
             icon: "photo",
+          },
+          {
+            label: "ascii-art",
+            href: "/ascii",
+            description: "アスキーアート",
+            icon: "code",
+          },
+          {
+            label: "WIP bg-remover",
+            href: "/remove-bg",
+            description: "背景削除",
+            icon: "pen",
+          },
+          {
+            label: "WIP artifacts",
+            href: "/artifacts",
+            description: "デジタル遺物",
+            icon: "bolt",
           },
         ] satisfies ToolLink[],
       },
@@ -179,7 +197,7 @@ export default function Home() {
       <div className="h-screen bg-black text-white flex flex-col">
         <div className="w-full px-6 py-12">
           <div className="flex w-full justify-end gap-6  pb-4">
-            <label className="flex items-center gap-2 text-sm text-white/70 pr-8">
+            <label className="flex items-center gap-2 text-md text-white/70 pr-8">
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -190,7 +208,7 @@ export default function Home() {
             </label>
           </div>
 
-          <div className="mt-8 pl-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10">
+          <div className="mt-6 pl-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10">
             {filteredGroups.map((group) => (
               <section key={group.title} aria-label={group.title}>
                 <div className="text-xs text-white/45 tracking-[0.22em] uppercase">
@@ -201,12 +219,12 @@ export default function Home() {
                     <li key={item.href}>
                       <Link
                         href={item.href}
-                        className="group inline-flex items-baseline gap-2 text-white/80 hover:text-white transition-colors cursor-pointer"
+                        className="group inline-flex items-baseline gap-2 text-white/70 hover:text-white transition-colors cursor-pointer"
                       >
                         <span className="translate-y-px">
                           <LinkIcon kind={item.icon} />
                         </span>
-                        <span className="text-base leading-none">
+                        <span className="text-lg leading-none">
                           {item.label}
                         </span>
                         {item.description ? (
