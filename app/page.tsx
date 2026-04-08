@@ -154,13 +154,13 @@ export default function Home() {
             icon: "photo",
           },
           {
-            label: "ascii-art",
+            label: "ascii",
             href: "/ascii",
-            description: "アスキーアート",
+            description: "アスキー",
             icon: "code",
           },
           {
-            label: "WIP bg-remover",
+            label: "bg-remover",
             href: "/remove-bg",
             description: "背景削除",
             icon: "pen",

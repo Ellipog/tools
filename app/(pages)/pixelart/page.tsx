@@ -103,7 +103,10 @@ export default function PixelArtGenerator() {
   };
 
   useEffect(() => {
-    setEnabledPresets((freecolors as ColorData[]).slice(0, 10).map(getHex));
+    setEnabledPresets([
+      ...(freecolors as ColorData[]).map(getHex),
+      ...(premiumcolors as ColorData[]).map(getHex),
+    ]);
   }, []);
 
   const activePalette = useMemo(
@@ -186,7 +189,7 @@ export default function PixelArtGenerator() {
 
   return (
     <div className="min-h-dvh w-full bg-black overflow-y-auto overflow-x-hidden">
-      <Navbar title="pixel-art" jp="ドット絵" />
+      <Navbar title="pixel-art" jp="ドット絵" category="images" />
       <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
         <motion.header
           initial={{ opacity: 0, y: -20 }}

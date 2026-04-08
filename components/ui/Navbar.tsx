@@ -6,9 +6,10 @@ import { jpcharlist } from "@/public/data/charlists";
 export type HeaderProps = {
   title: string;
   jp: string;
+  category: string;
 };
 
-export default function Navbar({ title, jp }: HeaderProps) {
+export default function Navbar({ title, jp, category }: HeaderProps) {
   const jpchars = useMemo(() => jpcharlist, []);
 
   return (
@@ -19,7 +20,7 @@ export default function Navbar({ title, jp }: HeaderProps) {
             href="/"
             className="hover:text-white transition-colors cursor-pointer"
           >
-            @home
+            / home / {category}
           </Link>
         )}
         <span>/</span>

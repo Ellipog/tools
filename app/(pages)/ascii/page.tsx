@@ -144,7 +144,7 @@ export default function AsciiArtGenerator() {
 
   return (
     <div className="min-h-dvh w-full bg-black overflow-y-auto overflow-x-hidden selection:bg-white selection:text-black">
-      <Navbar title="ascii-art" jp="アスキーアート" />
+      <Navbar title="ascii" jp="アスキー" category="images" />
       <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
@@ -161,7 +161,7 @@ export default function AsciiArtGenerator() {
           <motion.aside
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="lg:col-span-4 space-y-10"
+            className="lg:col-span-2 space-y-10"
           >
             {/* 01. SOURCE */}
             <section>
@@ -263,7 +263,7 @@ export default function AsciiArtGenerator() {
                   className="text-sm text-white/35"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {Object.keys(ASCII_SETS).map((set) => (
                   <button
                     key={set}
@@ -287,7 +287,7 @@ export default function AsciiArtGenerator() {
           <motion.main
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="lg:col-span-8 flex flex-col bg-white/5 border border-white/10 min-h-[70vh] relative overflow-hidden"
+            className="lg:col-span-10 flex flex-col bg-white/5 border border-white/10 min-h-[70vh] relative overflow-hidden"
           >
             <canvas ref={canvasRef} className="hidden" />
 
