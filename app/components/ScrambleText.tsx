@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef } from "react";
+// @ts-ignore
 import ScrambleTextLib from "scramble-text";
 
 export type ScrambleTextProps = {
