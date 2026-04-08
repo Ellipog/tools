@@ -433,7 +433,7 @@ export default function PixelArtGenerator() {
                 <canvas
                   ref={canvasRef}
                   style={{ imageRendering: "pixelated" }}
-                  className="w-auto max-h-[74vh] shadow-[0_0_80px_rgba(255,255,255,0.03)]"
+                  className="max-w-[60vw] w-auto max-h-[74vh]"
                 />
                 <div className="mt-6 flex justify-between items-center opacity-100 transition-opacity">
                   <span className="text-[16px] uppercase tracking-widest text-white/50">
