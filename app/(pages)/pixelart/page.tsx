@@ -6,6 +6,7 @@ import ScrambleText from "@/components/ScrambleText";
 import { freecolors, premiumcolors } from "@/public/data/colors";
 import Navbar from "@/components/ui/Navbar";
 import CustomColorPicker from "@/components/ColorPicker";
+import { jpcharlist } from "@/public/data/charlists";
 
 type ColorData = Record<string, string | undefined>;
 
@@ -62,6 +63,8 @@ export default function PixelArtGenerator() {
     "#000000",
     "#ffffff",
   ]);
+
+  const jpchars = useMemo(() => jpcharlist, []);
 
   // When a new image is loaded, establish a default block width
   useEffect(() => {
@@ -183,7 +186,7 @@ export default function PixelArtGenerator() {
 
   return (
     <div className="min-h-dvh w-full bg-black overflow-y-auto overflow-x-hidden">
-      <Navbar title="pixel-art" />
+      <Navbar title="pixel-art" jp="ドット絵" />
       <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
@@ -207,7 +210,14 @@ export default function PixelArtGenerator() {
             {/* 01. SOURCE */}
             <section>
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
-                01. source
+                01. source{" "}
+                <ScrambleText
+                  text={"源泉"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay={true}
+                  className="text-sm text-white/35 transition-colors"
+                />
               </div>
               <label className="group block w-full border border-white/10 p-4 text-center cursor-pointer hover:bg-white/5 transition-all">
                 <span className="text-xs text-white/40 group-hover:text-white transition-colors uppercase tracking-widest">
@@ -220,7 +230,14 @@ export default function PixelArtGenerator() {
             {/* 02. CONFIG */}
             <section className="space-y-6">
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase">
-                02. config
+                02. config{" "}
+                <ScrambleText
+                  text={"設定"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay={true}
+                  className="text-sm text-white/35 transition-colors"
+                />
               </div>
               <div className="space-y-6">
                 <div className="space-y-3">
@@ -276,7 +293,14 @@ export default function PixelArtGenerator() {
             {/* 03. PALETTE */}
             <section className="space-y-4">
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase">
-                03. palette
+                03. palette{" "}
+                <ScrambleText
+                  text={"パレット"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay={true}
+                  className="text-sm text-white/35 transition-colors"
+                />
               </div>
               <div className="max-h-[400px] overflow-y-auto pr-4 space-y-8 custom-scrollbar">
                 {isAdvanced ? (
@@ -297,7 +321,6 @@ export default function PixelArtGenerator() {
                             }}
                           />
 
-                          {/* Remove Button - Visible on Hover */}
                           <button
                             onClick={() => {
                               const nextPalette = customPalette.filter(
@@ -311,7 +334,6 @@ export default function PixelArtGenerator() {
                         </div>
                       ))}
 
-                      {/* The Add Button */}
                       <button
                         onClick={() =>
                           setCustomPalette([...customPalette, "#3b82f6"])

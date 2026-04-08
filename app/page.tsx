@@ -175,7 +175,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <Navbar title="home" />
+      <Navbar title="home" jp="ホーム" />
       <div className="h-screen bg-black text-white flex flex-col">
         <div className="w-full px-6 py-12">
           <div className="flex w-full justify-end gap-6  pb-4">
