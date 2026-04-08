@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "@/app/retro.css";
-import CrtToggle from "@/app/components/CrtToggle";
+import CrtToggle from "@/components/CrtToggle";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://tools.aaenz.no"),

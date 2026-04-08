@@ -1,11 +1,11 @@
 import Link from "next/link";
-import ScrambleText from "@/app/components/ScrambleText";
+import ScrambleText from "@/components/ScrambleText";
 
 export type HeaderProps = {
   title: string;
 };
 
-export default function Header({ title }: HeaderProps) {
+export default function Navbar({ title }: HeaderProps) {
   return (
     <div className="text-white pt-8 pl-11 absolute">
       <div className="text-xs text-white/40 tracking-widest uppercase italic flex items-center gap-1">

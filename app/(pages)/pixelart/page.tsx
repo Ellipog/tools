@@ -2,9 +2,10 @@
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import ScrambleText from "@/app/components/ScrambleText";
+import ScrambleText from "@/components/ScrambleText";
 import { freecolors, premiumcolors } from "@/public/data/colors";
-import Header from "@/components/ui/header";
+import Navbar from "@/components/ui/Navbar";
+import CustomColorPicker from "@/components/ColorPicker";
 
 type ColorData = Record<string, string | undefined>;
 
@@ -181,8 +182,8 @@ export default function PixelArtGenerator() {
     : 8;
 
   return (
-    <div className="min-h-[100dvh] w-full bg-black overflow-y-auto overflow-x-hidden">
-      <Header title="pixel-art" />
+    <div className="min-h-dvh w-full bg-black overflow-y-auto overflow-x-hidden">
+      <Navbar title="pixel-art" />
       <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
@@ -205,7 +206,7 @@ export default function PixelArtGenerator() {
           >
             {/* 01. SOURCE */}
             <section>
-              <div className="text-[10px] text-white/70 tracking-[0.2em] uppercase mb-4">
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
                 01. source
               </div>
               <label className="group block w-full border border-white/10 p-4 text-center cursor-pointer hover:bg-white/5 transition-all">
@@ -218,12 +219,12 @@ export default function PixelArtGenerator() {
 
             {/* 02. CONFIG */}
             <section className="space-y-6">
-              <div className="text-[10px] text-white/70 tracking-[0.2em] uppercase">
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase">
                 02. config
               </div>
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <div className="flex justify-between text-[10px] text-white/40 uppercase tracking-widest">
+                  <div className="flex justify-between text-[12px] text-white/40 uppercase tracking-widest">
                     <span>Scale</span>
                     <div>
                       <span>width: </span>
@@ -235,7 +236,7 @@ export default function PixelArtGenerator() {
                         placeholder="0"
                         onChange={(e) => handleWidthChange(e.target.value)}
                         onBlur={handleWidthBlur}
-                        className="w-12 mr-2 text-right focus:outline-none focus:ring-0 border-b-1  "
+                        className="w-12 mr-2 text-right focus:outline-none focus:ring-0 border-b"
                       />
                       <span>px</span>
                     </div>
@@ -254,10 +255,6 @@ export default function PixelArtGenerator() {
                     }}
                     className="w-full accent-white bg-white/10 h-px appearance-none cursor-pointer hover:bg-white/20 transition-all"
                   />
-                  <p className="text-[8px] text-white/20 leading-relaxed uppercase tracking-tight">
-                    Higher scale results in lower detail. 1x is original
-                    resolution.
-                  </p>
                 </div>
               </div>
 
@@ -278,31 +275,48 @@ export default function PixelArtGenerator() {
 
             {/* 03. PALETTE */}
             <section className="space-y-4">
-              <div className="text-[10px] text-white/70 tracking-[0.2em] uppercase">
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase">
                 03. palette
               </div>
               <div className="max-h-[400px] overflow-y-auto pr-4 space-y-8 custom-scrollbar">
                 {isAdvanced ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-12 gap-2">
-                      {customPalette.map((c, i) => (
-                        <input
-                          key={i}
-                          type="color"
-                          value={c}
-                          onChange={(e) => {
-                            const n = [...customPalette];
-                            n[i] = e.target.value;
-                            setCustomPalette(n);
-                          }}
-                          className="w-full h-full aspect-square bg-transparent border border-white/10 p-0.5 pr-1 pl-1 cursor-pointer"
-                        />
+                  <div className="space-y-6 bg-black text-white">
+                    <div className="text-[12px] text-white/50 uppercase tracking-widest font-bold">
+                      Custom Palette
+                    </div>
+
+                    <div className="-mt-2 grid grid-cols-16 gap-1.5">
+                      {customPalette.map((color, i) => (
+                        <div key={i} className="group relative">
+                          <CustomColorPicker
+                            color={color}
+                            onChange={(newColor) => {
+                              const nextPalette = [...customPalette];
+                              nextPalette[i] = newColor;
+                              setCustomPalette(nextPalette);
+                            }}
+                          />
+
+                          {/* Remove Button - Visible on Hover */}
+                          <button
+                            onClick={() => {
+                              const nextPalette = customPalette.filter(
+                                (_, index) => index !== i,
+                              );
+                              setCustomPalette(nextPalette);
+                            }}
+                            className="absolute -top-1 -right-1 w-3 h-3 bg-red-800 text-white/80 rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-10"
+                            title="Remove color"
+                          />
+                        </div>
                       ))}
+
+                      {/* The Add Button */}
                       <button
                         onClick={() =>
-                          setCustomPalette([...customPalette, "#ffffff"])
+                          setCustomPalette([...customPalette, "#3b82f6"])
                         }
-                        className="aspect-square border transition-all border-white z-10"
+                        className="aspect-square flex items-center justify-center border-2 border-dashed border-white/10 text-white/30 hover:border-white/40 hover:text-white transition-all text-2xl"
                       >
                         +
                       </button>
@@ -313,12 +327,12 @@ export default function PixelArtGenerator() {
                     {/* FREE COLORS */}
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <div className="text-[9px] text-white/50 uppercase tracking-widest font-bold">
+                        <div className="text-[12px] text-white/50 uppercase tracking-widest font-bold">
                           free_palette
                         </div>
                         <button
                           onClick={() => toggleGroup(freecolors)}
-                          className="text-[8px] text-white/40 hover:text-white uppercase tracking-tighter border-b border-white/10 pb-0.5"
+                          className="text-[10px] text-white/40 hover:text-white uppercase tracking-tighter border-b border-white/10 pb-0.5 cursor-pointer"
                         >
                           add/remove all
                         </button>
@@ -337,7 +351,7 @@ export default function PixelArtGenerator() {
                                     : [...enabledPresets, h],
                                 )
                               }
-                              className={`aspect-square border transition-all ${active ? "border-white z-10" : "border-transparent opacity-20 hover:opacity-100"}`}
+                              className={`aspect-square border scale-92 transition-all cursor-pointer ${active ? "border-white scale-100 z-10" : "border-transparent opacity-20 hover:opacity-100"}`}
                               style={{ backgroundColor: h }}
                               title={Object.keys(c)[0]}
                             />
@@ -349,12 +363,12 @@ export default function PixelArtGenerator() {
                     {/* PREMIUM COLORS */}
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <div className="text-[9px] text-white/50 uppercase tracking-widest font-bold text-amber-500/50">
+                        <div className="text-[12px] text-white/50 uppercase tracking-widest font-bold">
                           premium_palette
                         </div>
                         <button
                           onClick={() => toggleGroup(premiumcolors)}
-                          className="text-[8px] text-white/40 hover:text-white uppercase tracking-tighter border-b border-white/10 pb-0.5"
+                          className="text-[10px] text-white/40 hover:text-white uppercase tracking-tighter border-b border-white/10 pb-0.5 cursor-pointer"
                         >
                           add/remove all
                         </button>
@@ -373,7 +387,7 @@ export default function PixelArtGenerator() {
                                     : [...enabledPresets, h],
                                 )
                               }
-                              className={`aspect-square border transition-all ${active ? "border-white scale-110 z-10" : "border-transparent opacity-20 hover:opacity-100"}`}
+                              className={`aspect-square border scale-92 transition-all cursor-pointer ${active ? "border-white scale-100 z-10" : "border-transparent opacity-20 hover:opacity-100"}`}
                               style={{ backgroundColor: h }}
                               title={Object.keys(c)[0]}
                             />
@@ -390,17 +404,17 @@ export default function PixelArtGenerator() {
           <motion.main
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="lg:col-span-8 flex flex-col items-center justify-center bg-white/[0.02] border border-white/5 min-h-[60vh] p-8"
+            className="lg:col-span-8 flex flex-col items-center justify-center bg-white/2 border border-white/5 min-h-[60vh] p-8"
           >
             {image ? (
               <div className="relative group">
                 <canvas
                   ref={canvasRef}
                   style={{ imageRendering: "pixelated" }}
-                  className="max-w-full h-auto shadow-[0_0_80px_rgba(255,255,255,0.03)]"
+                  className="w-auto max-h-[74vh] shadow-[0_0_80px_rgba(255,255,255,0.03)]"
                 />
-                <div className="mt-6 flex justify-between items-center opacity-40 group-hover:opacity-100 transition-opacity">
-                  <span className="text-[9px] uppercase tracking-widest">
+                <div className="mt-6 flex justify-between items-center opacity-100 transition-opacity">
+                  <span className="text-[16px] uppercase tracking-widest text-white/50">
                     PIXEL COUNT: {totalPixelCount}
                   </span>
                   <button
@@ -433,7 +447,7 @@ export default function PixelArtGenerator() {
                       link.href = downloadCanvas.toDataURL("image/png");
                       link.click();
                     }}
-                    className="text-[9px] uppercase tracking-widest border-b border-white/20 hover:text-white"
+                    className="text-[16px] uppercase tracking-widest border-b border-white/20 text-white/50 hover:text-white cursor-pointer"
                   >
                     download_png
                   </button>

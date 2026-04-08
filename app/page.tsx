@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import ScrambleText from "@/app/components/ScrambleText";
-import Header from "@/components/ui/header";
+import ScrambleText from "@/components/ScrambleText";
+import Navbar from "@/components/ui/Navbar";
 import { jpcharlist } from "@/public/data/charlists";
 
 type ToolLink = {
@@ -175,7 +175,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      <Header title="home" />
+      <Navbar title="home" />
       <div className="h-screen bg-black text-white flex flex-col">
         <div className="w-full px-6 py-12">
           <div className="flex w-full justify-end gap-6  pb-4">
