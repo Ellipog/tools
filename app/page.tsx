@@ -179,13 +179,13 @@ export default function Home() {
       <div className="h-screen bg-black text-white flex flex-col">
         <div className="w-full px-6 py-12">
           <div className="flex w-full justify-end gap-6  pb-4">
-            <label className="flex items-center gap-2 text-sm text-white/60 pr-8">
+            <label className="flex items-center gap-2 text-sm text-white/70 pr-8">
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 inputMode="search"
                 placeholder="search…"
-                className="border-b border-white/10 w-44 sm:w-56 bg-transparent text-white/80 placeholder:text-white/30 outline-none text-right"
+                className="border-b border-white/10 w-44 sm:w-56 bg-transparent text-white/80 placeholder:text-white/50 outline-none text-right"
               />
             </label>
           </div>

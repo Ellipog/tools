@@ -34,14 +34,14 @@
   }
 }
 
-/* 1. LOCK VIEWPORT: Prevents the transform from causing screen-wide overflow */
+/* 1. LOCK VIEWPORT: Keeps the 3D effect stable */
 html,
 body {
   height: 100vh;
   width: 100vw;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow: hidden; /* Prevent the main window from scrolling */
 }
 
 body {
@@ -51,7 +51,7 @@ body {
   position: relative;
 }
 
-/* Remove ALL scrollbars (keep scrolling functional inside containers) */
+/* Remove ALL scrollbars visually but keep functional */
 * {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -60,29 +60,28 @@ body {
   width: 0;
   height: 0;
 }
-*::-webkit-scrollbar-thumb {
-  background: transparent;
-}
 
-/* 2. CONSTRAIN CONTENT: Ensure the "glass" doesn't exceed screen dimensions */
+/* 2. CONSTRAIN CONTENT: This is now your primary scroller */
 .crt-content {
   height: 100vh;
   width: 100vw;
   max-width: 100%;
   max-height: 100%;
-  overflow-y: auto; /* Content can still scroll inside the CRT effect */
+  overflow-y: auto; /* Enable scrolling inside the CRT glass */
+  overflow-x: hidden;
   box-sizing: border-box;
   position: relative;
+  -webkit-overflow-scrolling: touch; /* Smooth scroll for iOS */
 }
 
 html.crt-on .crt-content {
-  /* Scale is set to 1.0 to prevent edges from pushing past the screen bounds during 3D rotation */
   transform: perspective(1400px) translateZ(var(--crt-bulge))
     rotateX(var(--crt-bend-tilt)) rotateY(calc(var(--crt-bend-tilt) * -1))
     scale(1);
   transform-origin: 50% 50%;
   border-radius: var(--crt-bend-radius);
-  overflow: clip;
+  /* Use 'auto' instead of 'clip' to allow the scroll to work under the transform */
+  overflow-y: auto;
   will-change: transform;
 }
 
@@ -124,7 +123,6 @@ html.crt-on .crt-overlay {
   opacity: 1;
 }
 
-/* Layer 1: scanlines + RGB mask */
 .crt-overlay::before {
   content: "";
   position: absolute;
@@ -151,7 +149,6 @@ html.crt-on .crt-overlay {
   opacity: 0.95;
 }
 
-/* Layer 2: vignette + occasional flicker + subtle noise */
 .crt-overlay::after {
   content: "";
   position: absolute;

@@ -181,7 +181,7 @@ export default function PixelArtGenerator() {
     : 8;
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-[100dvh] w-full bg-black overflow-y-auto overflow-x-hidden">
       <Header title="pixel-art" />
       <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
         <motion.header
