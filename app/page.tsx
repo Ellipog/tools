@@ -149,27 +149,32 @@ export default function Home() {
         items: [
           {
             label: "pixel-art",
-            href: "/pixelart",
+            href: "/images/pixelart",
             description: "ドット絵",
             icon: "photo",
           },
           {
             label: "ascii",
-            href: "/ascii",
+            href: "/images/ascii",
             description: "アスキー",
             icon: "code",
           },
           {
             label: "bg-remover",
-            href: "/remove-bg",
+            href: "/images/remove-bg",
             description: "背景削除",
             icon: "pen",
           },
+        ] satisfies ToolLink[],
+      },
+      {
+        title: "text",
+        items: [
           {
-            label: "WIP artifacts",
-            href: "/artifacts",
-            description: "デジタル遺物",
-            icon: "bolt",
+            label: "references",
+            href: "/text/references",
+            description: "引用",
+            icon: "pen",
           },
         ] satisfies ToolLink[],
       },
@@ -208,40 +213,46 @@ export default function Home() {
             </label>
           </div>
 
-          <div className="mt-6 pl-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-10">
-            {filteredGroups.map((group) => (
-              <section key={group.title} aria-label={group.title}>
-                <div className="text-xs text-white/45 tracking-[0.22em] uppercase">
-                  {group.title}
-                </div>
-                <ul className="mt-3 space-y-2.5">
-                  {group.items.map((item) => (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        className="group inline-flex items-baseline gap-2 text-white/70 hover:text-white transition-colors cursor-pointer"
-                      >
-                        <span className="translate-y-px">
-                          <LinkIcon kind={item.icon} />
-                        </span>
-                        <span className="text-lg leading-none">
-                          {item.label}
-                        </span>
-                        {item.description ? (
-                          <ScrambleText
-                            text={item.description}
-                            chars={jpchars}
-                            timeOffset={100}
-                            autoPlay={true}
-                            className="text-sm text-white/35 group-hover:text-white/45 transition-colors"
-                          />
-                        ) : null}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ))}
+          <div className="mt-6 pl-5 h-[calc(100vh-250px)] overflow-y-auto overflow-x-hidden custom-scrollbar">
+            <div className="columns-1 sm:columns-2 lg:columns-3 gap-x-10 [column-fill:auto]">
+              {filteredGroups.map((group) => (
+                <section
+                  key={group.title}
+                  aria-label={group.title}
+                  className="mb-10 break-inside-avoid-column"
+                >
+                  <div className="text-xs text-white/45 tracking-[0.22em] uppercase">
+                    {group.title}
+                  </div>
+                  <ul className="mt-3 space-y-2.5">
+                    {group.items.map((item) => (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          className="group inline-flex items-baseline gap-2 text-white/70 hover:text-white transition-colors cursor-pointer"
+                        >
+                          <span className="translate-y-px">
+                            <LinkIcon kind={item.icon} />
+                          </span>
+                          <span className="text-lg leading-none">
+                            {item.label}
+                          </span>
+                          {item.description ? (
+                            <ScrambleText
+                              text={item.description}
+                              chars={jpchars}
+                              timeOffset={100}
+                              autoPlay={true}
+                              className="text-sm text-white/35 group-hover:text-white/45 transition-colors"
+                            />
+                          ) : null}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
           </div>
 
           {filteredGroups.length === 0 && (
