@@ -4,22 +4,51 @@ import "@/app/retro.css";
 import CrtToggle from "@/components/CrtToggle";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://tools.aaenz.no"),
+  metadataBase: new URL("https://runen.no"),
   title: {
-    default: "tools · aaenz",
-    template: "%s · tools · aaenz",
+    default: "runen",
+    template: "%s // runen", // Changed to double slash for a more technical feel
   },
-  applicationName: "tools · aaenz",
-  robots: { index: true, follow: true },
+  description: "A collection of digital tools and artifacts.",
+  applicationName: "runen",
+
+  // Clean robots instructions
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+
+  // Discord & Facebook optimization
   openGraph: {
     type: "website",
-    title: "tools · aaenz",
-    siteName: "tools · aaenz",
+    url: "https://runen.no",
+    title: "runen",
+    description: "Collection of varied digital utilities.",
+    siteName: "runen",
+    locale: "en_US", // Or "nb_NO" if you prefer Norwegian primary
+    // images: [{ url: '/og-image.png', width: 1200, height: 630 }] // Un-comment if you add an OG image
   },
+
+  // Twitter/X optimization
   twitter: {
-    card: "summary",
-    title: "tools · aaenz",
+    card: "summary_large_image", // Shows a bigger card on Discord/Twitter
+    title: "runen",
+    description: "Digital tools & artifacts.",
+    // images: ['/og-image.png'],
   },
+
+  // Additional UX tags
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
+
+  // Theme color for mobile browser bars
+  themeColor: "#000000",
 };
 
 const nostrutaru = localFont({
