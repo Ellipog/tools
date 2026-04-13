@@ -79,20 +79,20 @@ export default function FeatureModal({ isOpen, onClose }: FeatureModalProps) {
           <form onSubmit={handleSubmit} className="p-6 space-y-5">
             <header className="flex justify-between items-center border-b border-white/5 pb-3">
               <div className="flex flex-col">
-                <span className="text-[10px] tracking-[0.3em] uppercase text-white/40 font-bold">
+                <span className="text-[12px] tracking-[0.3em] uppercase text-white/40 font-bold">
                   Request_Feature
                 </span>
                 <ScrambleText
                   text="機能リクエスト"
                   chars={jpcharlist}
-                  className="text-[10px] text-white/20"
+                  className="text-[12px] text-white/20"
                   autoPlay
                 />
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="text-white/20 hover:text-white transition-colors text-xs"
+                className="text-white/20 hover:text-white transition-colors text-sm"
               >
                 ✕
               </button>
@@ -100,7 +100,7 @@ export default function FeatureModal({ isOpen, onClose }: FeatureModalProps) {
 
             <div className="space-y-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] uppercase tracking-widest text-white/30">
+                <label className="text-[11px] uppercase tracking-widest text-white/30">
                   Identifier
                 </label>
                 <input
@@ -114,7 +114,7 @@ export default function FeatureModal({ isOpen, onClose }: FeatureModalProps) {
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-[9px] uppercase tracking-widest text-white/30">
+                <label className="text-[11px] uppercase tracking-widest text-white/30">
                   Description
                 </label>
                 <textarea
