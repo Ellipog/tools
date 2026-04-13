@@ -29,8 +29,8 @@ export const metadata: Metadata = {
     title: "runen",
     description: "Collection of varied digital utilities.",
     siteName: "runen",
-    locale: "en_US", // Or "nb_NO" if you prefer Norwegian primary
-    // images: [{ url: '/og-image.png', width: 1200, height: 630 }] // Un-comment if you add an OG image
+    locale: "en_US",
+    images: [{ url: "../public/og-image.png", width: 1200, height: 630 }],
   },
 
   // Twitter/X optimization
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image", // Shows a bigger card on Discord/Twitter
     title: "runen",
     description: "Digital tools & artifacts.",
-    // images: ['/og-image.png'],
+    images: ["../public/og-image.png"],
   },
 
   // Additional UX tags
