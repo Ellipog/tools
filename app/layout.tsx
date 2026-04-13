@@ -3,6 +3,10 @@ import localFont from "next/font/local";
 import "@/app/retro.css";
 import CrtToggle from "@/components/CrtToggle";
 
+export const viewport = {
+  themeColor: "#000000",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://runen.no"),
   title: {
@@ -46,9 +50,6 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/apple-touch-icon.png",
   },
-
-  // Theme color for mobile browser bars
-  themeColor: "#000000",
 };
 
 const nostrutaru = localFont({
