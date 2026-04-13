@@ -92,7 +92,7 @@ export default function FeatureModal({ isOpen, onClose }: FeatureModalProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="text-white/20 hover:text-white transition-colors text-sm"
+                className="text-white/20 hover:text-white transition-colors text-sm cursor-pointer"
               >
                 ✕
               </button>
@@ -131,7 +131,7 @@ export default function FeatureModal({ isOpen, onClose }: FeatureModalProps) {
             <button
               type="submit"
               disabled={status === "loading" || status === "success"}
-              className="w-full bg-white text-black py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 disabled:opacity-30 transition-all"
+              className="w-full bg-white text-black py-2 text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 disabled:opacity-30 transition-all cursor-pointer"
             >
               {status === "loading"
                 ? "Transmitting..."
