@@ -5,6 +5,7 @@ import Link from "next/link";
 import ScrambleText from "@/components/ScrambleText";
 import Navbar from "@/components/ui/Navbar";
 import { jpcharlist } from "@/public/data/charlists";
+import FeatureModal from "@/components/RequestFeature";
 
 type ToolLink = {
   label: string;
@@ -134,11 +135,35 @@ function LinkIcon({ kind }: { kind: ToolLink["icon"] }) {
           />
         </svg>
       );
+    case "mail":
+      return (
+        <svg
+          className={common}
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+          />
+          <path
+            d="m22 6-10 7L2 6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      );
   }
 }
 
 export default function Home() {
   const [query, setQuery] = useState("");
+  const [showFeatureRequest, setShowFeatureRequest] = useState(false);
 
   const jpchars = useMemo(() => jpcharlist, []);
 
@@ -262,6 +287,25 @@ export default function Home() {
           )}
         </div>
       </div>
+      <div
+        className="fixed bottom-9 right-14 text-sm gap-2 flex items-center cursor-pointer"
+        onClick={() => setShowFeatureRequest(true)}
+      >
+        <div className="flex items-center gap-2">
+          <LinkIcon kind="mail" />
+          <span className="tracking-wider">REQUEST_FEATURE</span>
+        </div>
+        <ScrambleText
+          text="機能のリクエスト"
+          chars={jpchars}
+          timeOffset={100}
+          className="text-xs text-white/35 group-hover:text-white/45 transition-colors"
+        />
+      </div>
+      <FeatureModal
+        isOpen={showFeatureRequest}
+        onClose={() => setShowFeatureRequest(false)}
+      />
     </div>
   );
 }

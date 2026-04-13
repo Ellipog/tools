@@ -5,14 +5,14 @@
   --foreground: #d32f2f;
 
   /* CRT effect tuning (enabled via html.crt-on) */
-  --crt-scanline-opacity: 0.12;
+  --crt-scanline-opacity: 0.06;
   --crt-scanline-size: 2px;
-  --crt-mask-opacity: 0.06;
+  --crt-mask-opacity: 0.03;
   --crt-mask-size: 3px;
-  --crt-vignette-opacity: 0.38;
-  --crt-flicker-opacity: 0.045;
+  --crt-vignette-opacity: 0.15;
+  --crt-flicker-opacity: 0.02;
   --crt-flicker-cycle: 7s;
-  --crt-noise-opacity: 0.025;
+  --crt-noise-opacity: 0.015;
 
   /* CRT bend */
   --crt-bend-radius: 94px;
