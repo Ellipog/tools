@@ -79,7 +79,6 @@ html.crt-on .crt-content {
     rotateX(var(--crt-bend-tilt)) rotateY(calc(var(--crt-bend-tilt) * -1))
     scale(1);
   transform-origin: 50% 50%;
-  border-radius: var(--crt-bend-radius);
   /* Use 'auto' instead of 'clip' to allow the scroll to work under the transform */
   overflow-y: auto;
   will-change: transform;
