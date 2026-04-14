@@ -35,6 +35,7 @@ export default function CaptionGenerator() {
   const [captionText, setCaptionText] = useState("");
   const [mode, setMode] = useState<CaptionMode>("classic_top");
   const [fontSize, setFontSize] = useState(40);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1.0);
   const [fontFamily, setFontFamily] = useState("Impact");
   const [textColor, setTextColor] = useState("#FFFFFF");
   const [bgColor, setBgColor] = useState("#FFFFFF");
@@ -81,6 +82,12 @@ export default function CaptionGenerator() {
     setActivePreset(id);
   };
 
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = playbackSpeed;
+    }
+  }, [playbackSpeed, sourcePreview]);
+
   const drawFrame = useCallback(
     (
       ctx: CanvasRenderingContext2D,
@@ -88,6 +95,13 @@ export default function CaptionGenerator() {
       width: number,
       height: number,
     ) => {
+      if (!width || !height) return;
+      if (
+        source instanceof HTMLImageElement &&
+        (!source.complete || source.naturalWidth === 0)
+      )
+        return;
+
       const previewWidth = containerRef.current?.clientWidth || width;
       const exportScale = width / previewWidth;
       const scaledFontSize = fontSize * exportScale;
@@ -116,8 +130,13 @@ export default function CaptionGenerator() {
         : 0;
 
       const canvas = ctx.canvas;
-      canvas.width = width;
-      canvas.height = height + realExtraHeight;
+      if (
+        canvas.width !== width ||
+        canvas.height !== height + realExtraHeight
+      ) {
+        canvas.width = width;
+        canvas.height = height + realExtraHeight;
+      }
 
       ctx.fillStyle = mode.startsWith("classic") ? bgColor : "transparent";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -238,10 +257,15 @@ export default function CaptionGenerator() {
     const offCtx = offscreenCanvas.getContext("2d", {
       willReadFrequently: true,
     })!;
+    const dummySource =
+      fileType === "video" ? videoRef.current! : imageRef.current!;
+    drawFrame(offCtx, dummySource, sourceDimensions.w, sourceDimensions.h);
 
     const gifEncoder = new GIF({
       workers: 4,
-      quality: 2,
+      quality: 10,
+      width: offscreenCanvas.width,
+      height: offscreenCanvas.height,
       workerScript: "/workers/gif.worker.js",
     });
 
@@ -253,7 +277,11 @@ export default function CaptionGenerator() {
       tempCanvas.height = sourceDimensions.h;
       const tempCtx = tempCanvas.getContext("2d")!;
 
-      for (const frame of frames) {
+      // GIF SMART SKIP: Skip frames based on speed factor
+      const step = Math.max(1, Math.round(playbackSpeed));
+
+      for (let i = 0; i < frames.length; i += step) {
+        const frame = frames[i];
         if (frame.disposalType === 2)
           tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
         const frameData = tempCtx.createImageData(
@@ -266,18 +294,38 @@ export default function CaptionGenerator() {
         patchCanvas.height = frame.dims.height;
         patchCanvas.getContext("2d")!.putImageData(frameData, 0, 0);
         tempCtx.drawImage(patchCanvas, frame.dims.left, frame.dims.top);
+
         drawFrame(offCtx, tempCanvas, sourceDimensions.w, sourceDimensions.h);
-        gifEncoder.addFrame(offCtx, { copy: true, delay: frame.delay });
+
+        // If we skipped frames, we keep the original delay to maintain "real-time" feel but at higher speed
+        // or we divide by playbackSpeed if we want it to look "faster" rather than "skipped"
+        // Here we divide to ensure the output GIF is actually faster.
+        gifEncoder.addFrame(offscreenCanvas, {
+          copy: true,
+          delay: frame.delay / playbackSpeed,
+        });
       }
     } else if (fileType === "video" && videoRef.current) {
       const video = videoRef.current;
-      const fps = 15;
-      const totalFrames = Math.min(video.duration * fps, 120);
-      for (let i = 0; i < totalFrames; i++) {
-        video.currentTime = i / fps;
+      const baseFps = 20;
+      // SMART VIDEO SKIP: Increase the time increment based on speed
+      // This allows a 150 frame limit to cover a 30s video if speed is high.
+      const timeIncrement = (1 / baseFps) * playbackSpeed;
+      const frameCount = 150;
+
+      for (let i = 0; i < frameCount; i++) {
+        const targetTime = i * timeIncrement;
+        if (targetTime > video.duration) break;
+
+        video.currentTime = targetTime;
         await new Promise((r) => (video.onseeked = r));
         drawFrame(offCtx, video, sourceDimensions.w, sourceDimensions.h);
-        gifEncoder.addFrame(offCtx, { copy: true, delay: 1000 / fps });
+
+        // Use standard delay so the GIF plays back at normal speed but with the "fast" footage
+        gifEncoder.addFrame(offscreenCanvas, {
+          copy: true,
+          delay: 1000 / baseFps,
+        });
       }
     } else if (imageRef.current) {
       drawFrame(
@@ -286,7 +334,7 @@ export default function CaptionGenerator() {
         sourceDimensions.w,
         sourceDimensions.h,
       );
-      gifEncoder.addFrame(offCtx, { copy: true, delay: 200 });
+      gifEncoder.addFrame(offscreenCanvas, { copy: true, delay: 200 });
     }
 
     gifEncoder.on("finished", (blob: Blob) => {
@@ -363,48 +411,32 @@ export default function CaptionGenerator() {
                 value={captionText}
                 onChange={(e) => setCaptionText(e.target.value)}
                 placeholder="ENTER TEXT..."
-                className="w-full bg-white/5 border border-white/10 p-3 text-xs tracking-widest font-mono focus:outline-none focus:border-white/30 transition-colors"
+                className="w-full bg-white/5 border border-white/10 p-3 text-xs tracking-widest font-mono focus:outline-none"
               />
-              <select
-                value={fontFamily}
-                onChange={(e) => setFontFamily(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 p-3 text-[10px] uppercase font-mono outline-none appearance-none cursor-pointer"
-              >
-                {[
-                  "Impact",
-                  "Arial",
-                  "Verdana",
-                  "Courier New",
-                  "Georgia",
-                  "Inter",
-                ].map((f) => (
-                  <option key={f} value={f} className="bg-[#050505]">
-                    {f}
-                  </option>
-                ))}
-              </select>
-              <div className="grid grid-cols-2 gap-4">
+
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="text-[9px] text-white/30 uppercase">
-                    Size: {fontSize}px
+                  <div className="text-[9px] text-white/30 uppercase flex justify-between">
+                    <span>Size</span> <span>{fontSize}px</span>
                   </div>
                   <input
                     type="range"
-                    min="12"
-                    max="150"
+                    min="10"
+                    max="500"
                     value={fontSize}
                     onChange={(e) => setFontSize(parseInt(e.target.value))}
                     className="w-full accent-white h-px bg-white/10 appearance-none"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <div className="text-[9px] text-white/30 uppercase">
-                    Stroke: {strokeWidth}px
+                  <div className="text-[9px] text-white/30 uppercase flex justify-between">
+                    <span>Stroke</span> <span>{strokeWidth}px</span>
                   </div>
                   <input
                     type="range"
                     min="0"
-                    max="12"
+                    max="50"
                     value={strokeWidth}
                     onChange={(e) => setStrokeWidth(parseInt(e.target.value))}
                     className="w-full accent-white h-px bg-white/10 appearance-none"
@@ -415,22 +447,25 @@ export default function CaptionGenerator() {
 
             <section className="space-y-4">
               <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
-                03. Palette
+                03. Smart Skip Speed
               </div>
-              <div className="flex gap-1.5 justify-stretch mt-4">
-                {(
-                  Object.keys(PALETTE_PRESETS) as Array<
-                    keyof typeof PALETTE_PRESETS
-                  >
-                ).map((id) => (
-                  <button
-                    key={id}
-                    onClick={() => applyPreset(id)}
-                    className={`flex-1 text-[11px] font-bold border py-2 transition-all uppercase tracking-widest ${activePreset === id ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-black text-white/50 border-white/20 hover:border-white/50 hover:text-white"}`}
-                  >
-                    {id}
-                  </button>
-                ))}
+              <div className="space-y-2">
+                <div className="text-[9px] text-white/30 uppercase flex justify-between">
+                  <span>Factor</span> <span>{playbackSpeed}x</span>
+                </div>
+                <input
+                  type="range"
+                  min="1.0"
+                  max="10.0"
+                  step="0.5"
+                  value={playbackSpeed}
+                  onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
+                  className="w-full accent-white h-px bg-white/10 appearance-none"
+                />
+                <div className="flex justify-between text-[8px] text-white/20 font-mono">
+                  <span>REALTIME</span>
+                  <span>ULTRA SKIP</span>
+                </div>
               </div>
             </section>
 
@@ -471,7 +506,7 @@ export default function CaptionGenerator() {
             <div className="w-full border-b border-white/10 bg-black/40 backdrop-blur-md px-6 py-3 flex items-center justify-between z-10 font-mono text-[9px] text-white/30 uppercase tracking-widest">
               <div className="flex items-center gap-4">
                 <div
-                  className={`w-1.5 h-1.5 rounded-full ${sourcePreview ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500"}`}
+                  className={`w-1.5 h-1.5 rounded-full ${sourcePreview ? "bg-green-500" : "bg-red-500"}`}
                 />
                 <span>
                   Status: {sourcePreview ? "Active_Feed" : "Awaiting_Input"}
@@ -489,13 +524,10 @@ export default function CaptionGenerator() {
                     ref={containerRef}
                     className="relative shadow-2xl ring-1 ring-white/10 max-h-full max-w-full"
                   >
-                    {/* CANVAS IS THE PREVIEW */}
                     <canvas
                       ref={canvasRef}
                       className="max-h-[67vh] w-auto object-contain block h-auto"
                     />
-
-                    {/* HIDDEN SOURCES */}
                     <div className="hidden">
                       {fileType === "video" ? (
                         <video
@@ -504,13 +536,17 @@ export default function CaptionGenerator() {
                           autoPlay
                           loop
                           muted
+                          crossOrigin="anonymous"
                         />
                       ) : (
-                        <img ref={imageRef} src={sourcePreview} alt="source" />
+                        <img
+                          ref={imageRef}
+                          src={sourcePreview}
+                          alt="source"
+                          crossOrigin="anonymous"
+                        />
                       )}
                     </div>
-
-                    {/* INTERACTION LAYER */}
                     {mode === "overlay_drag" && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <motion.div
@@ -535,13 +571,6 @@ export default function CaptionGenerator() {
                     text="awaiting_media_input"
                     className="uppercase tracking-[0.5em] font-mono text-white/10 text-xs"
                   />
-                  <div className="w-48 h-px bg-white/5 relative overflow-hidden">
-                    <motion.div
-                      animate={{ x: [-200, 200] }}
-                      transition={{ repeat: Infinity, duration: 2 }}
-                      className="absolute inset-0 w-1/2 bg-white/20"
-                    />
-                  </div>
                 </div>
               )}
             </AnimatePresence>
