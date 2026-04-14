@@ -28,7 +28,9 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    "public/workers/gif.worker.js",
+    "public/workers/gif.worker.js"
   ],
   "exclude": ["node_modules"]
 }

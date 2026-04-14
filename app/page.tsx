@@ -190,6 +190,12 @@ export default function Home() {
             description: "背景削除",
             icon: "pen",
           },
+          {
+            label: "gif-captions",
+            href: "/images/gif-captions",
+            description: "idk",
+            icon: "photo",
+          },
         ] satisfies ToolLink[],
       },
       {
