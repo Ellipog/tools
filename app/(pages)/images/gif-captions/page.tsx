@@ -115,7 +115,7 @@ export default function CaptionGenerator() {
 
       for (let i = 1; i < words.length; i++) {
         const testLine = currentLine + " " + words[i];
-        if (ctx.measureText(testLine.toUpperCase()).width < maxWidth) {
+        if (ctx.measureText(testLine).width < maxWidth) {
           currentLine = testLine;
         } else {
           lines.push(currentLine);
@@ -152,9 +152,9 @@ export default function CaptionGenerator() {
       ctx.strokeStyle = strokeColor;
 
       const drawLine = (line: string, x: number, y: number) => {
-        if (strokeWidth > 0) ctx.strokeText(line.toUpperCase(), x, y);
+        if (strokeWidth > 0) ctx.strokeText(line, x, y);
         ctx.fillStyle = textColor;
-        ctx.fillText(line.toUpperCase(), x, y);
+        ctx.fillText(line, x, y);
       };
 
       if (mode.startsWith("classic")) {
@@ -277,7 +277,6 @@ export default function CaptionGenerator() {
       tempCanvas.height = sourceDimensions.h;
       const tempCtx = tempCanvas.getContext("2d")!;
 
-      // GIF SMART SKIP: Skip frames based on speed factor
       const step = Math.max(1, Math.round(playbackSpeed));
 
       for (let i = 0; i < frames.length; i += step) {
@@ -296,10 +295,6 @@ export default function CaptionGenerator() {
         tempCtx.drawImage(patchCanvas, frame.dims.left, frame.dims.top);
 
         drawFrame(offCtx, tempCanvas, sourceDimensions.w, sourceDimensions.h);
-
-        // If we skipped frames, we keep the original delay to maintain "real-time" feel but at higher speed
-        // or we divide by playbackSpeed if we want it to look "faster" rather than "skipped"
-        // Here we divide to ensure the output GIF is actually faster.
         gifEncoder.addFrame(offscreenCanvas, {
           copy: true,
           delay: frame.delay / playbackSpeed,
@@ -308,8 +303,6 @@ export default function CaptionGenerator() {
     } else if (fileType === "video" && videoRef.current) {
       const video = videoRef.current;
       const baseFps = 20;
-      // SMART VIDEO SKIP: Increase the time increment based on speed
-      // This allows a 150 frame limit to cover a 30s video if speed is high.
       const timeIncrement = (1 / baseFps) * playbackSpeed;
       const frameCount = 150;
 
@@ -320,8 +313,6 @@ export default function CaptionGenerator() {
         video.currentTime = targetTime;
         await new Promise((r) => (video.onseeked = r));
         drawFrame(offCtx, video, sourceDimensions.w, sourceDimensions.h);
-
-        // Use standard delay so the GIF plays back at normal speed but with the "fast" footage
         gifEncoder.addFrame(offscreenCanvas, {
           copy: true,
           delay: 1000 / baseFps,
@@ -361,7 +352,7 @@ export default function CaptionGenerator() {
 
   return (
     <div className="min-h-dvh w-full bg-[#050505] overflow-y-auto overflow-x-hidden selection:bg-white selection:text-black">
-      <Navbar title="gif-captions" jp="GIF字幕" category="media" />
+      <Navbar title="caption-gen" jp="キャプション" category="media" />
       <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
@@ -380,7 +371,7 @@ export default function CaptionGenerator() {
             className="lg:col-span-3 space-y-8"
           >
             <section className="space-y-4">
-              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono flex items-center gap-2">
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
                 01. Source{" "}
                 <ScrambleText
                   text={"源泉"}
@@ -403,7 +394,7 @@ export default function CaptionGenerator() {
             </section>
 
             <section className="space-y-6">
-              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
                 02. Typography
               </div>
               <input
@@ -411,12 +402,31 @@ export default function CaptionGenerator() {
                 value={captionText}
                 onChange={(e) => setCaptionText(e.target.value)}
                 placeholder="ENTER TEXT..."
-                className="w-full bg-white/5 border border-white/10 p-3 text-xs tracking-widest font-mono focus:outline-none"
+                className="w-full bg-white/5 border border-white/10 p-3 text-sm tracking-widest font-mono focus:outline-none"
               />
+
+              <select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-3 text-[13px] uppercase font-mono outline-none appearance-none cursor-pointer"
+              >
+                {[
+                  "Impact",
+                  "Arial",
+                  "Verdana",
+                  "Courier New",
+                  "Georgia",
+                  "Inter",
+                ].map((f) => (
+                  <option key={f} value={f} className="bg-[#050505]">
+                    {f}
+                  </option>
+                ))}
+              </select>
 
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <div className="text-[9px] text-white/30 uppercase flex justify-between">
+                  <div className="text-[11px] text-white/30 uppercase flex justify-between">
                     <span>Size</span> <span>{fontSize}px</span>
                   </div>
                   <input
@@ -428,9 +438,8 @@ export default function CaptionGenerator() {
                     className="w-full accent-white h-px bg-white/10 appearance-none"
                   />
                 </div>
-
                 <div className="space-y-2">
-                  <div className="text-[9px] text-white/30 uppercase flex justify-between">
+                  <div className="text-[11px] text-white/30 uppercase flex justify-between">
                     <span>Stroke</span> <span>{strokeWidth}px</span>
                   </div>
                   <input
@@ -446,11 +455,32 @@ export default function CaptionGenerator() {
             </section>
 
             <section className="space-y-4">
-              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
-                03. Smart Skip Speed
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
+                03. Palette
+              </div>
+              <div className="flex gap-1.5 justify-stretch mt-4">
+                {(
+                  Object.keys(PALETTE_PRESETS) as Array<
+                    keyof typeof PALETTE_PRESETS
+                  >
+                ).map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => applyPreset(id)}
+                    className={`flex-1 text-[11px] font-bold border py-2 transition-all uppercase tracking-widest ${activePreset === id ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-black text-white/50 border-white/20 hover:border-white/50 hover:text-white"}`}
+                  >
+                    {id}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
+                04. Smart Skip Speed
               </div>
               <div className="space-y-2">
-                <div className="text-[9px] text-white/30 uppercase flex justify-between">
+                <div className="text-[11px] text-white/30 uppercase flex justify-between">
                   <span>Factor</span> <span>{playbackSpeed}x</span>
                 </div>
                 <input
@@ -462,7 +492,7 @@ export default function CaptionGenerator() {
                   onChange={(e) => setPlaybackSpeed(parseFloat(e.target.value))}
                   className="w-full accent-white h-px bg-white/10 appearance-none"
                 />
-                <div className="flex justify-between text-[8px] text-white/20 font-mono">
+                <div className="mt-4 flex justify-between text-[11px] text-white/20 font-mono">
                   <span>REALTIME</span>
                   <span>ULTRA SKIP</span>
                 </div>
@@ -470,8 +500,8 @@ export default function CaptionGenerator() {
             </section>
 
             <section className="space-y-4">
-              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
-                04. Layout
+              <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
+                05. Layout
               </div>
               <div className="grid grid-cols-1 gap-2">
                 {["classic_top", "classic_bottom", "overlay_drag"].map((m) => (
