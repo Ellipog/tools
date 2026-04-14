@@ -193,7 +193,7 @@ export default function Home() {
           {
             label: "gif-captions",
             href: "/images/gif-captions",
-            description: "idk",
+            description: "GIF字幕",
             icon: "photo",
           },
         ] satisfies ToolLink[],
