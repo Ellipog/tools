@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+} from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ScrambleText from "@/components/ScrambleText";
 import Navbar from "@/components/ui/Navbar";
@@ -11,6 +17,11 @@ import { parseGIF, decompressFrames } from "gifuct-js";
 type CaptionMode = "classic_top" | "classic_bottom" | "overlay_drag";
 
 export default function CaptionGenerator() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [sourcePreview, setSourcePreview] = useState<string | null>(null);
   const [sourceDimensions, setSourceDimensions] = useState<{
@@ -18,24 +29,176 @@ export default function CaptionGenerator() {
     h: number;
   } | null>(null);
   const [fileType, setFileType] = useState<"image" | "video" | "gif">("image");
+  const [bitrate, setBitrate] = useState(0);
+  const [kaomoji] = useState("(￣▽￣)ノ");
 
   const [captionText, setCaptionText] = useState("");
   const [mode, setMode] = useState<CaptionMode>("classic_top");
-  const [fontSize, setFontSize] = useState(32);
+  const [fontSize, setFontSize] = useState(40);
+  const [fontFamily, setFontFamily] = useState("Impact");
+  const [textColor, setTextColor] = useState("#FFFFFF");
+  const [bgColor, setBgColor] = useState("#FFFFFF");
+  const [strokeColor, setStrokeColor] = useState("#000000");
+  const [strokeWidth, setStrokeWidth] = useState(4);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [copyLabel, setCopyLabel] = useState("generate_gif");
 
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const jpchars = useMemo(() => jpcharlist, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
+  const PALETTE_PRESETS = {
+    LT_CLASSIC: {
+      textColor: "#FFFFFF",
+      strokeColor: "#000000",
+      bgColor: "#FFFFFF",
+      strokeWidth: 4,
+    },
+    NEWSPAPER: {
+      textColor: "#000000",
+      strokeColor: "transparent",
+      bgColor: "#FFFFFF",
+      strokeWidth: 0,
+    },
+    DK_CLASSIC: {
+      textColor: "#FFFFFF",
+      strokeColor: "#000000",
+      bgColor: "#000000",
+      strokeWidth: 4,
+    },
+  };
+
+  const [activePreset, setActivePreset] = useState<string | null>("LT_CLASSIC");
+
+  const applyPreset = (id: keyof typeof PALETTE_PRESETS) => {
+    const p = PALETTE_PRESETS[id];
+    setTextColor(p.textColor);
+    setStrokeColor(p.strokeColor);
+    setBgColor(p.bgColor);
+    setStrokeWidth(p.strokeWidth);
+    setActivePreset(id);
+  };
+
+  const drawFrame = useCallback(
+    (
+      ctx: CanvasRenderingContext2D,
+      source: CanvasImageSource,
+      width: number,
+      height: number,
+    ) => {
+      const previewWidth = containerRef.current?.clientWidth || width;
+      const exportScale = width / previewWidth;
+      const scaledFontSize = fontSize * exportScale;
+      const padding = 20 * exportScale;
+      const maxWidth = width - padding * 2;
+
+      ctx.font = `bold ${scaledFontSize}px ${fontFamily}, sans-serif`;
+      const words = captionText.split(" ");
+      const lines: string[] = [];
+      let currentLine = words[0] || "";
+
+      for (let i = 1; i < words.length; i++) {
+        const testLine = currentLine + " " + words[i];
+        if (ctx.measureText(testLine.toUpperCase()).width < maxWidth) {
+          currentLine = testLine;
+        } else {
+          lines.push(currentLine);
+          currentLine = words[i];
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+
+      const lineHeight = scaledFontSize * 1.2;
+      const realExtraHeight = mode.startsWith("classic")
+        ? lines.length * lineHeight + padding
+        : 0;
+
+      const canvas = ctx.canvas;
+      canvas.width = width;
+      canvas.height = height + realExtraHeight;
+
+      ctx.fillStyle = mode.startsWith("classic") ? bgColor : "transparent";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const mediaY = mode === "classic_top" ? realExtraHeight : 0;
+      ctx.drawImage(source, 0, mediaY, width, height);
+
+      ctx.font = `bold ${scaledFontSize}px ${fontFamily}, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      ctx.lineWidth = strokeWidth * (fontSize / 32) * exportScale;
+      ctx.strokeStyle = strokeColor;
+
+      const drawLine = (line: string, x: number, y: number) => {
+        if (strokeWidth > 0) ctx.strokeText(line.toUpperCase(), x, y);
+        ctx.fillStyle = textColor;
+        ctx.fillText(line.toUpperCase(), x, y);
+      };
+
+      if (mode.startsWith("classic")) {
+        const startY =
+          mode === "classic_top"
+            ? padding / 2 + lineHeight / 2
+            : height + padding / 2 + lineHeight / 2;
+
+        lines.forEach((line, i) => {
+          drawLine(line, canvas.width / 2, startY + i * lineHeight);
+        });
+      } else if (mode === "overlay_drag") {
+        ctx.save();
+        ctx.translate(
+          (previewWidth / 2 + position.x) * exportScale,
+          ((containerRef.current?.clientHeight || height) / 2 + position.y) *
+            exportScale,
+        );
+        drawLine(captionText, 0, 0);
+        ctx.restore();
+      }
+    },
+    [
+      captionText,
+      fontSize,
+      fontFamily,
+      mode,
+      textColor,
+      bgColor,
+      strokeColor,
+      strokeWidth,
+      position,
+    ],
+  );
+
+  useEffect(() => {
+    let frameId: number;
+    const loop = () => {
+      if (
+        canvasRef.current &&
+        sourceDimensions &&
+        (imageRef.current || videoRef.current)
+      ) {
+        const ctx = canvasRef.current.getContext("2d", {
+          willReadFrequently: true,
+        });
+        if (ctx) {
+          const source =
+            fileType === "video" ? videoRef.current : imageRef.current;
+          if (source)
+            drawFrame(ctx, source, sourceDimensions.w, sourceDimensions.h);
+        }
+      }
+      frameId = requestAnimationFrame(loop);
+    };
+    frameId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(frameId);
+  }, [drawFrame, sourceDimensions, fileType]);
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSourceFile(file);
-
     const type = file.type.startsWith("video")
       ? "video"
       : file.type === "image/gif"
@@ -47,11 +210,9 @@ export default function CaptionGenerator() {
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       setSourcePreview(dataUrl);
-
       const media =
         type === "video" ? document.createElement("video") : new Image();
       const loadEvent = type === "video" ? "onloadedmetadata" : "onload";
-
       (media as any)[loadEvent] = () => {
         setSourceDimensions({
           w:
@@ -69,62 +230,19 @@ export default function CaptionGenerator() {
     reader.readAsDataURL(file);
   };
 
-  const applyOverlay = (
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    extraHeight: number,
-  ) => {
-    const allCapsCaption = captionText.toUpperCase();
-    ctx.font = `bold ${fontSize}px Impact, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.lineWidth = Math.max(1, fontSize / 12);
-    ctx.strokeStyle = "black";
-    ctx.lineJoin = "round";
-
-    const drawText = (x: number, y: number) => {
-      ctx.strokeText(allCapsCaption, x, y);
-      ctx.fillStyle = "white";
-      ctx.fillText(allCapsCaption, x, y);
-    };
-
-    if (mode === "classic_top") {
-      drawText(width / 2, extraHeight / 2);
-    } else if (mode === "classic_bottom") {
-      drawText(width / 2, height + extraHeight - extraHeight / 2);
-    } else if (mode === "overlay_drag") {
-      ctx.save();
-      const mappedScale = width / (containerRef.current?.clientWidth || width);
-      ctx.translate(
-        ((containerRef.current?.clientWidth || 0) / 2 + position.x) *
-          mappedScale,
-        ((containerRef.current?.clientHeight || 0) / 2 + position.y) *
-          mappedScale,
-      );
-      drawText(0, 0);
-      ctx.restore();
-    }
-  };
-
   const handleDownload = async () => {
-    if (!sourcePreview || !canvasRef.current || !sourceDimensions) return;
-    setCopyLabel("processing...");
+    if (!sourcePreview || !sourceDimensions) return;
+    setCopyLabel("rendering...");
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
-    const extraHeight =
-      mode === "classic_top" || mode === "classic_bottom" ? fontSize * 1.5 : 0;
-
-    canvas.width = sourceDimensions.w;
-    canvas.height = sourceDimensions.h + extraHeight;
+    const offscreenCanvas = document.createElement("canvas");
+    const offCtx = offscreenCanvas.getContext("2d", {
+      willReadFrequently: true,
+    })!;
 
     const gifEncoder = new GIF({
       workers: 4,
       quality: 2,
       workerScript: "/workers/gif.worker.js",
-      width: canvas.width,
-      height: canvas.height,
     });
 
     if (fileType === "gif" && sourceFile) {
@@ -148,51 +266,32 @@ export default function CaptionGenerator() {
         patchCanvas.height = frame.dims.height;
         patchCanvas.getContext("2d")!.putImageData(frameData, 0, 0);
         tempCtx.drawImage(patchCanvas, frame.dims.left, frame.dims.top);
-
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(tempCanvas, 0, mode === "classic_top" ? extraHeight : 0);
-        applyOverlay(ctx, sourceDimensions.w, sourceDimensions.h, extraHeight);
-        gifEncoder.addFrame(ctx, { copy: true, delay: frame.delay });
+        drawFrame(offCtx, tempCanvas, sourceDimensions.w, sourceDimensions.h);
+        gifEncoder.addFrame(offCtx, { copy: true, delay: frame.delay });
       }
     } else if (fileType === "video" && videoRef.current) {
       const video = videoRef.current;
       const fps = 15;
-      const totalFrames = Math.min(video.duration * fps, 100);
-
+      const totalFrames = Math.min(video.duration * fps, 120);
       for (let i = 0; i < totalFrames; i++) {
         video.currentTime = i / fps;
         await new Promise((r) => (video.onseeked = r));
-        ctx.fillStyle = "white";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(
-          video,
-          0,
-          mode === "classic_top" ? extraHeight : 0,
-          sourceDimensions.w,
-          sourceDimensions.h,
-        );
-        applyOverlay(ctx, sourceDimensions.w, sourceDimensions.h, extraHeight);
-        gifEncoder.addFrame(ctx, { copy: true, delay: 1000 / fps });
+        drawFrame(offCtx, video, sourceDimensions.w, sourceDimensions.h);
+        gifEncoder.addFrame(offCtx, { copy: true, delay: 1000 / fps });
       }
     } else if (imageRef.current) {
-      // STATIC IMAGE PATH
-      ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(
+      drawFrame(
+        offCtx,
         imageRef.current,
-        0,
-        mode === "classic_top" ? extraHeight : 0,
         sourceDimensions.w,
         sourceDimensions.h,
       );
-      applyOverlay(ctx, sourceDimensions.w, sourceDimensions.h, extraHeight);
-      gifEncoder.addFrame(ctx, { copy: true, delay: 200 });
+      gifEncoder.addFrame(offCtx, { copy: true, delay: 200 });
     }
 
     gifEncoder.on("finished", (blob: Blob) => {
       const link = document.createElement("a");
-      link.download = `captioned_${Date.now()}.gif`;
+      link.download = `meme_${Date.now()}.gif`;
       link.href = URL.createObjectURL(blob);
       link.click();
       setCopyLabel("done");
@@ -202,28 +301,49 @@ export default function CaptionGenerator() {
     gifEncoder.render();
   };
 
-  const memeFontStyle: React.CSSProperties = {
-    fontFamily: "'Impact', sans-serif",
-    color: "white",
-    fontWeight: "bold",
-    textShadow:
-      "-2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000",
-    textTransform: "uppercase",
-  };
+  useEffect(() => {
+    const interval = setInterval(
+      () => setBitrate(Math.floor(Math.random() * 700 + 3800)),
+      1500,
+    );
+    return () => clearInterval(interval);
+  }, []);
+
+  if (!mounted) return <div className="min-h-dvh bg-[#050505]" />;
 
   return (
-    <div className="min-h-dvh w-full bg-[#050505] overflow-hidden selection:bg-white selection:text-black">
+    <div className="min-h-dvh w-full bg-[#050505] overflow-y-auto overflow-x-hidden selection:bg-white selection:text-black">
       <Navbar title="caption-gen" jp="キャプション" category="media" />
-      <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12 max-h-[calc(100vh-80px)]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 overflow-hidden">
-          <aside className="lg:col-span-4 space-y-10 overflow-y-auto pr-4 custom-scrollbar">
-            <section>
-              <div className="text-[14px] text-white/70 uppercase mb-4 tracking-[0.2em]">
-                01. source
+      <div className="h-full text-white p-6 sm:p-12 flex flex-col gap-12">
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex justify-end gap-4 border-b border-white/10 pb-8"
+        >
+          <button className="text-[10px] tracking-[0.3em] text-white/50 border border-white/10 px-3 py-2 bg-white/5">
+            {kaomoji}
+          </button>
+        </motion.header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          <motion.aside
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="lg:col-span-3 space-y-8"
+          >
+            <section className="space-y-4">
+              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono flex items-center gap-2">
+                01. Source{" "}
+                <ScrambleText
+                  text={"源泉"}
+                  chars={jpchars}
+                  autoPlay
+                  className="text-[10px] text-white/20"
+                />
               </div>
               <label className="group block w-full border border-white/10 p-4 text-center cursor-pointer hover:bg-white/5 transition-all">
-                <span className="text-[10px] uppercase tracking-[0.2em]">
-                  {sourceFile ? sourceFile.name : "upload_media"}
+                <span className="text-[10px] text-white/40 group-hover:text-white uppercase tracking-widest">
+                  {sourceFile ? sourceFile.name.toLowerCase() : "upload_media"}
                 </span>
                 <input
                   type="file"
@@ -235,117 +355,162 @@ export default function CaptionGenerator() {
             </section>
 
             <section className="space-y-6">
-              <div className="text-[14px] text-white/70 uppercase tracking-[0.2em]">
-                02. config
+              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
+                02. Typography
               </div>
               <input
                 type="text"
                 value={captionText}
                 onChange={(e) => setCaptionText(e.target.value)}
                 placeholder="ENTER TEXT..."
-                className="w-full bg-white/5 border border-white/10 p-3 text-xs uppercase tracking-widest font-mono focus:outline-none focus:border-white/40"
+                className="w-full bg-white/5 border border-white/10 p-3 text-xs tracking-widest font-mono focus:outline-none focus:border-white/30 transition-colors"
               />
-              <div className="grid grid-cols-1 gap-2">
+              <select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 p-3 text-[10px] uppercase font-mono outline-none appearance-none cursor-pointer"
+              >
+                {[
+                  "Impact",
+                  "Arial",
+                  "Verdana",
+                  "Courier New",
+                  "Georgia",
+                  "Inter",
+                ].map((f) => (
+                  <option key={f} value={f} className="bg-[#050505]">
+                    {f}
+                  </option>
+                ))}
+              </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="text-[9px] text-white/30 uppercase">
+                    Size: {fontSize}px
+                  </div>
+                  <input
+                    type="range"
+                    min="12"
+                    max="150"
+                    value={fontSize}
+                    onChange={(e) => setFontSize(parseInt(e.target.value))}
+                    className="w-full accent-white h-px bg-white/10 appearance-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="text-[9px] text-white/30 uppercase">
+                    Stroke: {strokeWidth}px
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="12"
+                    value={strokeWidth}
+                    onChange={(e) => setStrokeWidth(parseInt(e.target.value))}
+                    className="w-full accent-white h-px bg-white/10 appearance-none"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
+                03. Palette
+              </div>
+              <div className="flex gap-1.5 justify-stretch mt-4">
                 {(
-                  [
-                    "classic_top",
-                    "classic_bottom",
-                    "overlay_drag",
-                  ] as CaptionMode[]
-                ).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    className={`text-[10px] py-3 px-4 border uppercase flex items-center gap-4 transition-all ${mode === m ? "bg-white text-black" : "border-white/10 text-white/30 hover:border-white/40"}`}
+                  Object.keys(PALETTE_PRESETS) as Array<
+                    keyof typeof PALETTE_PRESETS
                   >
-                    <div
-                      className={`w-2 h-2 ${mode === m ? "bg-black" : "bg-white/20"}`}
-                    />{" "}
-                    {m.replace("_", " ")}
+                ).map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => applyPreset(id)}
+                    className={`flex-1 text-[11px] font-bold border py-2 transition-all uppercase tracking-widest ${activePreset === id ? "bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]" : "bg-black text-white/50 border-white/20 hover:border-white/50 hover:text-white"}`}
+                  >
+                    {id}
                   </button>
                 ))}
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-[9px] text-white/30 uppercase tracking-widest">
-                  <span>Font_Size</span>
-                  <span>{fontSize}px</span>
-                </div>
-                <input
-                  type="range"
-                  min="12"
-                  max="120"
-                  value={fontSize}
-                  onChange={(e) => setFontSize(parseInt(e.target.value))}
-                  className="w-full accent-white bg-white/10 h-px appearance-none cursor-pointer"
-                />
+            </section>
+
+            <section className="space-y-4">
+              <div className="text-[12px] text-white/40 uppercase tracking-widest font-mono">
+                04. Layout
+              </div>
+              <div className="grid grid-cols-1 gap-2">
+                {["classic_top", "classic_bottom", "overlay_drag"].map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      setMode(m as CaptionMode);
+                      setPosition({ x: 0, y: 0 });
+                    }}
+                    className={`text-[9px] py-2 px-3 border tracking-[0.2em] uppercase transition-all ${mode === m ? "bg-white text-black border-white font-bold" : "border-white/10 text-white/30 hover:border-white/40"}`}
+                  >
+                    {m.replace("_", " ")}
+                  </button>
+                ))}
               </div>
             </section>
 
             <button
               onClick={handleDownload}
-              disabled={!sourcePreview || copyLabel.includes("processing")}
-              className="w-full border border-white/20 py-4 uppercase text-[10px] font-bold hover:bg-white hover:text-black transition-all disabled:opacity-20"
+              disabled={!sourcePreview || copyLabel.includes("rendering")}
+              className="w-full border border-white/20 py-4 uppercase text-[11px] tracking-[0.2em] font-bold hover:bg-white hover:text-black transition-all disabled:opacity-20"
             >
               {copyLabel}
             </button>
-          </aside>
+          </motion.aside>
 
-          <main className="lg:col-span-8 flex flex-col border border-white/10 min-h-[60vh] relative bg-[#080808]">
-            <canvas ref={canvasRef} className="hidden" />
+          <motion.main
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="lg:col-span-9 flex flex-col bg-white/5 border border-white/10 min-h-[70vh] relative overflow-hidden"
+          >
+            <div className="w-full border-b border-white/10 bg-black/40 backdrop-blur-md px-6 py-3 flex items-center justify-between z-10 font-mono text-[9px] text-white/30 uppercase tracking-widest">
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-1.5 h-1.5 rounded-full ${sourcePreview ? "bg-green-500 shadow-[0_0_8px_#22c55e]" : "bg-red-500"}`}
+                />
+                <span>
+                  Status: {sourcePreview ? "Active_Feed" : "Awaiting_Input"}
+                </span>
+              </div>
+              <div>
+                {bitrate} KBPS // {fileType}
+              </div>
+            </div>
+
             <AnimatePresence mode="wait">
               {sourcePreview ? (
-                <div className="flex-1 flex flex-col items-center justify-center p-8">
+                <div className="flex-1 flex items-center justify-center p-4 sm:p-8 bg-[#000000] overflow-hidden">
                   <div
                     ref={containerRef}
-                    className="relative bg-white shadow-2xl overflow-hidden"
-                    style={{
-                      maxHeight: "60vh",
-                      aspectRatio: sourceDimensions
-                        ? `${sourceDimensions.w}/${sourceDimensions.h + (mode.startsWith("classic") ? fontSize * 1.5 : 0)}`
-                        : "1",
-                    }}
+                    className="relative shadow-2xl ring-1 ring-white/10 max-h-full max-w-full"
                   >
-                    {mode === "classic_top" && (
-                      <div
-                        className="flex items-center justify-center bg-white text-black text-center"
-                        style={{
-                          height: `${fontSize * 1.5}px`,
-                          fontSize: `${fontSize}px`,
-                          ...memeFontStyle,
-                        }}
-                      >
-                        {captionText}
-                      </div>
-                    )}
-                    {fileType === "video" ? (
-                      <video
-                        ref={videoRef}
-                        src={sourcePreview}
-                        autoPlay
-                        loop
-                        muted
-                        className="block w-full h-full object-contain"
-                      />
-                    ) : (
-                      <img
-                        ref={imageRef}
-                        src={sourcePreview}
-                        alt="Preview"
-                        className="block w-full h-full object-contain"
-                      />
-                    )}
-                    {mode === "classic_bottom" && (
-                      <div
-                        className="flex items-center justify-center bg-white text-black text-center"
-                        style={{
-                          height: `${fontSize * 1.5}px`,
-                          fontSize: `${fontSize}px`,
-                          ...memeFontStyle,
-                        }}
-                      >
-                        {captionText}
-                      </div>
-                    )}
+                    {/* CANVAS IS THE PREVIEW */}
+                    <canvas
+                      ref={canvasRef}
+                      className="max-h-[67vh] w-auto object-contain block h-auto"
+                    />
+
+                    {/* HIDDEN SOURCES */}
+                    <div className="hidden">
+                      {fileType === "video" ? (
+                        <video
+                          ref={videoRef}
+                          src={sourcePreview}
+                          autoPlay
+                          loop
+                          muted
+                        />
+                      ) : (
+                        <img ref={imageRef} src={sourcePreview} alt="source" />
+                      )}
+                    </div>
+
+                    {/* INTERACTION LAYER */}
                     {mode === "overlay_drag" && (
                       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <motion.div
@@ -357,30 +522,30 @@ export default function CaptionGenerator() {
                               y: position.y + info.delta.y,
                             })
                           }
-                          className="pointer-events-auto cursor-grab active:cursor-grabbing text-center"
-                          style={{
-                            x: position.x,
-                            y: position.y,
-                            fontSize: `${fontSize}px`,
-                            ...memeFontStyle,
-                          }}
-                        >
-                          {captionText || "TEXT_OVERLAY"}
-                        </motion.div>
+                          className="pointer-events-auto cursor-grab active:cursor-grabbing w-32 h-12 border border-dashed border-white/20"
+                          style={{ x: position.x, y: position.y }}
+                        />
                       </div>
                     )}
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex-1 flex flex-col items-center justify-center gap-4">
                   <ScrambleText
-                    text="awaiting_media"
-                    className="text-white/10 uppercase tracking-[0.5em] font-mono"
+                    text="awaiting_media_input"
+                    className="uppercase tracking-[0.5em] font-mono text-white/10 text-xs"
                   />
+                  <div className="w-48 h-px bg-white/5 relative overflow-hidden">
+                    <motion.div
+                      animate={{ x: [-200, 200] }}
+                      transition={{ repeat: Infinity, duration: 2 }}
+                      className="absolute inset-0 w-1/2 bg-white/20"
+                    />
+                  </div>
                 </div>
               )}
             </AnimatePresence>
-          </main>
+          </motion.main>
         </div>
       </div>
     </div>
