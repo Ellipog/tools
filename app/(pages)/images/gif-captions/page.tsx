@@ -376,8 +376,9 @@ export default function CaptionGenerator() {
                 <ScrambleText
                   text={"源泉"}
                   chars={jpchars}
+                  timeOffset={100}
                   autoPlay
-                  className="text-[10px] text-white/20"
+                  className="text-sm text-white/35"
                 />
               </div>
               <label className="group block w-full border border-white/10 p-4 text-center cursor-pointer hover:bg-white/5 transition-all">
@@ -395,7 +396,14 @@ export default function CaptionGenerator() {
 
             <section className="space-y-6">
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
-                02. Typography
+                02. Typography{" "}
+                <ScrambleText
+                  text={"書体"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay
+                  className="text-sm text-white/35"
+                />
               </div>
               <input
                 type="text"
@@ -456,7 +464,14 @@ export default function CaptionGenerator() {
 
             <section className="space-y-4">
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
-                03. Palette
+                03. Palette{" "}
+                <ScrambleText
+                  text={"配色"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay
+                  className="text-sm text-white/35"
+                />
               </div>
               <div className="flex gap-1.5 justify-stretch mt-4">
                 {(
@@ -477,7 +492,14 @@ export default function CaptionGenerator() {
 
             <section className="space-y-4">
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
-                04. Smart Skip Speed
+                04. Smart Skip Speed{" "}
+                <ScrambleText
+                  text={"フレーム調整"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay
+                  className="text-sm text-white/35"
+                />
               </div>
               <div className="space-y-2">
                 <div className="text-[11px] text-white/30 uppercase flex justify-between">
@@ -501,7 +523,14 @@ export default function CaptionGenerator() {
 
             <section className="space-y-4">
               <div className="text-[14px] text-white/70 tracking-[0.2em] uppercase mb-4">
-                05. Layout
+                05. Layout{" "}
+                <ScrambleText
+                  text={"レイアウト"}
+                  chars={jpchars}
+                  timeOffset={100}
+                  autoPlay
+                  className="text-sm text-white/35"
+                />
               </div>
               <div className="grid grid-cols-1 gap-2">
                 {["classic_top", "classic_bottom", "overlay_drag"].map((m) => (
